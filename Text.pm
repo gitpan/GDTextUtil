@@ -1,9 +1,9 @@
-# $Id: Text.pm,v 1.32 2003/02/20 12:23:31 mgjv Exp $
+# $Id: Text.pm,v 1.37 2003/06/19 00:13:10 mgjv Exp $
 
 package GD::Text;
 
-$GD::Text::prog_version = '$Revision: 1.32 $' =~ /\s([\d.]+)/;
-$GD::Text::VERSION = '0.85';
+($GD::Text::prog_version) = '$Revision: 1.37 $' =~ /\s([\d.]+)/;
+$GD::Text::VERSION = '0.86';
 
 =head1 NAME
 
@@ -49,6 +49,12 @@ module, you could get burned. I may change them at any time.
 You can only use TrueType fonts with version of GD > 1.20, and then
 only if compiled with support for this. If you attempt to do it
 anyway, you will get errors.
+
+If you want to refer to builtin GD fonts by their short name
+(C<gdTinyFont>, C<gdGiantFont>), you will need to C<use> the GD module
+as well as one the GD::Text modules, because it is GD that exports
+those names into your name space. If you don't like that, use the
+longer alternatives (C<GD::Font->Giant>) instead.
 
 =head1 METHODS
 
@@ -242,7 +248,6 @@ sub _find_TTF
     {
         # XXX Can I use File::Basename for this?
         my $file = "$path$psep$font";
-        #print "Trying $file\n";
         -f $file and return $file;
         # See if we can find one with an extension at the end
 	for my $ext (qw/ ttf TTF /)
@@ -274,8 +279,11 @@ sub _set_TTF_font
     {
         # This is a relative path. Replace ./path/file with
         # $cwd/path/file
+	my $oldpath = $ENV{PATH};
+	$ENV{PATH}  = "/bin:/usr/bin"; # Keep -T happy
         require Cwd;
         substr($font_file, 0, 1) = Cwd::cwd;
+	$ENV{PATH} = $oldpath;
     }
 
     # Check that the font exists and is a real TTF font
@@ -584,7 +592,7 @@ sub can_do_ttf
     GD::Image->stringTTF(0, 'foo', 10, 0, 0, 0, 'foo');
 
     # Error message: libgd was not built with TrueType font support
-    $@ =~ /TrueType font support/i and return;
+    $@ =~ /not built with.*font support/i and return;
 
     # Well.. It all seems to be fine
     return 1;
