@@ -1,9 +1,9 @@
-# $Id: Text.pm,v 1.26 2002/06/14 23:17:32 mgjv Exp $
+# $Id: Text.pm,v 1.31 2003/02/05 02:28:44 mgjv Exp $
 
 package GD::Text;
 
-$GD::Text::prog_version = '$Revision: 1.26 $' =~ /\s([\d.]+)/;
-$GD::Text::VERSION = '0.83';
+$GD::Text::prog_version = '$Revision: 1.31 $' =~ /\s([\d.]+)/;
+$GD::Text::VERSION = '0.84';
 
 =head1 NAME
 
@@ -63,7 +63,9 @@ use Cwd;
 use vars qw($FONT_PATH @FONT_PATH $OS);
 BEGIN
 {
-    $FONT_PATH = $ENV{FONT_PATH} || $ENV{TTF_FONT_PATH} || '';
+    $FONT_PATH = $ENV{FONT_PATH}     || 
+                 $ENV{TTF_FONT_PATH} ||
+                 $ENV{TT_FONT_PATH}  || '';
     unless ($OS = $^O)
     {
         require Config;
@@ -421,7 +423,8 @@ sub width
     my $string = shift;
     my $save   = $self->get('text');
 
-    $self->set_text($string) or return;
+    my $len = $self->set_text($string);
+    return unless defined $len;
     my $w = $self->get('width');
     $self->set_text($save);
 
@@ -460,22 +463,36 @@ BEGIN
 {
     # Build a string of all characters that are printable, and that are
     # not whitespace.
-    eval {
-        require POSIX; 
-        import POSIX qw/isgraph/;
-        $test_string = join '', grep isgraph($_), map chr($_), (0x00..0xFF);
-    };
 
-    if ($@)
+    my @test_chars = map chr, 0x01 .. 0xff;
+
+    my $isprintable_sub;
+    if ($] >= 5.008)
     {
-        # Most likely POSIX is not available on this system.
-        # Let's try to emulate isgraph(). This may be wrong at times.
-        $test_string = join '', map chr($_), (0x21..0x7e, 0xa1..0xff);
+        # We have to do this at run time, otherwise 5.005_03 will
+        # whinge about [[::]] syntax being reserved, and this cannot
+        # be shut up with $^W
+        #$^W = 0;
+        eval '$isprintable_sub = sub { $_[0] =~ /^[[:graph:]]$/ }'
+    }
+    else
+    {
+        eval { local $SIG{'__WARN__'}; require POSIX };
+        if ($@)
+        {
+            @test_chars = map chr, 0x21..0x7e, 0xa1..0xff;
+            $isprintable_sub = sub { 1 }
+        }
+        else
+        {
+            $isprintable_sub = sub { POSIX::isgraph($_[0]) }
+        }
     }
 
-    $space_string = $test_string;
+    $test_string = join '', grep $isprintable_sub->($_), @test_chars;
 
     # Put a space every 5 characters, and count how many there are
+    $space_string = $test_string;
     $n_spaces = $space_string =~ s/(.{5})(.{5})/$1 $2/g;
 }
 
@@ -489,9 +506,9 @@ sub _recalc
     if ($self->is_builtin)
     {
         $self->{height} =
-        $self->{char_up} = $self->{font}->height();
+            $self->{char_up} = $self->{font}->height();
         $self->{char_down} = 0;
-        $self->{space} = $self->{font}->width();
+            $self->{space} = $self->{font}->width();
     }
     elsif ($self->is_ttf)
     {
@@ -512,7 +529,7 @@ sub _recalc
         confess "Impossible error in GD::Text::_recalc.";
     }
 
-    $self->_recalc_width() if $self->{text};
+    $self->_recalc_width() if defined $self->{text};
 
     return 1;
 }
@@ -596,7 +613,8 @@ relative to the current directory.
 Font files are only looked for in the current directory.
 
 FONT_PATH is initialised at module load time from the environment
-variables FONT_PATH or, if that's not present, TTF_FONT_PATH.
+variables FONT_PATH or, if that's not present, TTF_FONT_PATH, or
+TT_FONT_PATH.
 
 Returns the value the font path is set to.  If called without arguments
 C<font_path> returns the current font path.
@@ -630,8 +648,11 @@ encodings.  Fonts that have other characteristics may not work well.
 If that happens, please let me know how to make this work better.
 
 The font height gets estimated by building a string with all printable
-characters that pass the POSIX::isgraph() test. If your system doesn't
-have POSIX, I make an approximation that may be false.
+characters (with an ordinal value between 0 and 255) that pass the
+POSIX::isprint() test (and not the isspace() test). If your system
+doesn't have POSIX, I make an approximation that may be false. Under
+Perl 5.8.0 the [[:print:]] character class is used, since the POSIX
+is*() functions don't seem to work correctly.
 
 The whole font path thing works well on Unix, but probably not very well
 on other OS's. This is only a problem if you try to use a font path. If
