@@ -1,8 +1,11 @@
-# $Id: Text.pm,v 1.18 2000/01/30 10:55:37 mgjv Exp $
+# $Id: Text.pm,v 1.20 2000/02/28 23:29:38 mgjv Exp $
 
 package GD::Text;
 
-$GD::Text::VERSION = '0.70';
+$GD::Text::prog_version = 
+	(q($Revision: 1.20 $) =~ /\s([\d.]+)/ ? $1 : "0.0");
+
+$GD::Text::VERSION = '0.71';
 
 =head1 NAME
 
@@ -428,13 +431,13 @@ sub _recalc_width
 
 	if ($self->is_builtin)
 	{
-		$self->{width} = $self->{font}->width() * length($self->{text});
+		$self->{'width'} = $self->{font}->width() * length($self->{text});
 	}
 	elsif ($self->is_ttf)
 	{
 		my @bb1 = GD::Image->stringTTF(0, 
 			$self->{font}, $self->{ptsize}, 0, 0, 0, $self->{text});
-		$self->{width} = $bb1[2] - $bb1[0];
+		$self->{'width'} = $bb1[2] - $bb1[0];
 	}
 	else
 	{
