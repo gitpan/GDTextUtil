@@ -1,8 +1,8 @@
-# $Id: Align.pm,v 1.14 2003/02/03 06:06:23 mgjv Exp $
+# $Id: Align.pm,v 1.16 2003/02/20 12:23:32 mgjv Exp $
 
 package GD::Text::Align;
 
-$GD::Text::Align::VERSION = '$Revision: 1.14 $' =~ /\s([\d.]+)/;
+$GD::Text::Align::VERSION = '$Revision: 1.16 $' =~ /\s([\d.]+)/;
 
 =head1 NAME
 
@@ -20,7 +20,7 @@ GD::Text::Align - Draw aligned strings
     valign => 'top',
     halign => 'right',
   );
-  $align->set_font('cetus.ttf', 12);
+  $align->set_font('arial', 12);
   $align->set_text('some string');
   @bb = $align->bounding_box(200, 400, PI/3);
   # you can do things based on the bounding box here
@@ -245,8 +245,8 @@ sub _builtin_up
 {
     my $self = shift;
     return (
-        sin($self->{angle}) > 0.5 * sqrt(2) || 
-        sin($self->{angle}) < -0.5 * sqrt(2)
+	sin($self->{angle}) >  0.5 * sqrt(2) || 
+	sin($self->{angle}) < -0.5 * sqrt(2)
     )
 }
 
