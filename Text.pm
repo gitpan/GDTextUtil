@@ -1,11 +1,9 @@
-# $Id: Text.pm,v 1.20 2000/02/28 23:29:38 mgjv Exp $
+# $Id: Text.pm,v 1.22 2000/04/30 04:49:39 mgjv Exp $
 
 package GD::Text;
 
-$GD::Text::prog_version = 
-	(q($Revision: 1.20 $) =~ /\s([\d.]+)/ ? $1 : "0.0");
-
-$GD::Text::VERSION = '0.71';
+$GD::Text::prog_version = '$Revision: 1.22 $' =~ /\s([\d.]+)/;
+$GD::Text::VERSION = '0.75';
 
 =head1 NAME
 
@@ -622,7 +620,7 @@ If that happens, please let me know how to make this work better.
 
 The font height gets estimated by building a string with all printable
 characters that pass the POSIX::isgraph() test. If your system doesn't
-have POSIX, I make an approximation that may be false for your system.
+have POSIX, I make an approximation that may be false.
 
 The whole font path thing works well on Unix, but probably not very well
 on other OS's. This is only a problem if you try to use a font path. If
